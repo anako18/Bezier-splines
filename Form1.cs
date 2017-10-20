@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Drawing.Drawing2D;
 
 namespace Bezier
 {
@@ -34,6 +35,7 @@ namespace Bezier
             Bitmap bmp = new Bitmap(pictureBox1.Width, pictureBox1.Height);
             pictureBox1.Image = bmp;
             g = Graphics.FromImage(bmp);
+            pen.StartCap = pen.EndCap = LineCap.Round;
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -61,6 +63,29 @@ namespace Bezier
             }
         }
 
+        private void my_drawbeziers()
+        {
+            Point prev = new Point(-100, -100);
+            for (int i = 3; i < points.Count; i += 3)
+            {
+                for (double t = 0; t <= 1; t += 0.0005)
+                {
+                    double c0 = (1 - t) * (1 - t) * (1 - t);
+                    double c1 = (1 - t) * (1 - t) * 3 * t;
+                    double c2 = (1 - t) * t * 3 * t;
+                    double c3 = t * t * t;
+                    double x = c0 * points.Values.ElementAt(i - 3).X + c1 * points.Values.ElementAt(i - 2).X + c2 * points.Values.ElementAt(i-1).X + c3 * points.Values.ElementAt(i).X;
+                    double y = c0 * points.Values.ElementAt(i - 3).Y + c1 * points.Values.ElementAt(i - 2).Y + c2 * points.Values.ElementAt(i - 1).Y + c3 * points.Values.ElementAt(i).Y;
+                    g.DrawEllipse(pen, new Rectangle((int)x, (int)y, 1, 1));
+                    if (prev.X != -100)
+                        g.DrawLine(pen, new Point((int)x, (int)y), prev);
+                    prev.X = (int)x;
+                    prev.Y = (int)y;
+                }
+                pictureBox1.Refresh();
+            }
+        }
+
         //draw bezier
         private void button1_Click(object sender, EventArgs e)
         {
@@ -68,8 +93,16 @@ namespace Bezier
             {
                 label1.Visible = true;
                 return;
-            } 
-            g.DrawBezier(pen, points.Values.ElementAt(0), points.Values.ElementAt(1), points.Values.ElementAt(2), points.Values.ElementAt(3));
+            }
+
+            if ((points.Count - 1) % 3 == 0)
+            {
+                my_drawbeziers();
+                //pen.Color = Color.Red;
+                //g.DrawBeziers(pen, points.Values.ToArray());
+            }
+            else
+                label1.Visible = true;
             pictureBox1.Refresh();
         }
 
@@ -88,7 +121,8 @@ namespace Bezier
         private void redraw()
         {
             g.Clear(System.Drawing.Color.White);
-            
+
+            if (!(points == null))
             for (int i = 0; i<points.Count; i++)
             {
                 g.DrawEllipse(pen, new Rectangle(points.Values.ElementAt(i).X, points.Values.ElementAt(i).Y, 1, 1));
@@ -111,7 +145,17 @@ namespace Bezier
             points.Clear();
             listBox1.Items.Clear();
             g.Clear(System.Drawing.Color.White);
+            c = 'A';
             pictureBox1.Refresh();
+        }
+
+
+        private void Form1_SizeChanged(object sender, EventArgs e)
+        {
+            Bitmap bmp = new Bitmap(pictureBox1.Width, pictureBox1.Height);
+            pictureBox1.Image = bmp;
+            g = Graphics.FromImage(bmp);
+            redraw();
         }
     }
 }
